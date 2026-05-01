@@ -1,0 +1,28 @@
+# compiled binaries
+/server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# test binaries and coverage
+*.test
+*.out
+coverage.html
+
+# profiling
+*.prof
+*.pprof
+
+# env (commit .env.example only)
+.env
+.env.local
+.env.*.local
+
+# editor / OS
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.swp
