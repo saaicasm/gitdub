@@ -21,11 +21,6 @@ func NewClient(token string) *Client {
 	}
 }
 
-var (
-	_ repo.Fetcher  = (*Client)(nil)
-	_ issues.Lister = (*Client)(nil)
-)
-
 func (c *Client) Fetch(ctx context.Context, owner, name string) (*repo.Metadata, error) {
 	r, resp, err := c.client.Repositories.Get(ctx, owner, name)
 	if err != nil {
