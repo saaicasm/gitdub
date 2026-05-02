@@ -9,15 +9,17 @@ import (
 
 	"github.com/saaicasm/gitdub/internal/issues"
 	"github.com/saaicasm/gitdub/internal/repo"
+	"github.com/saaicasm/gitdub/internal/tree"
 )
 
 type Handler struct {
-	fetcher repo.Fetcher
-	lister  issues.Lister
+	fetcher    repo.Fetcher
+	lister     issues.Lister
+	treeLister tree.Lister
 }
 
-func NewHandler(fetcher repo.Fetcher, lister issues.Lister) *Handler {
-	return &Handler{fetcher: fetcher, lister: lister}
+func NewHandler(fetcher repo.Fetcher, lister issues.Lister, treeLister tree.Lister) *Handler {
+	return &Handler{fetcher: fetcher, lister: lister, treeLister: treeLister}
 }
 
 func (h *Handler) GetMetadata(w http.ResponseWriter, r *http.Request) {
@@ -106,12 +108,48 @@ func (h *Handler) ListIssues(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(issuesResponse{Data: list})
 }
 
+func (h *Handler) ListTree(w http.ResponseWriter, r *http.Request) {
+	owner := r.PathValue("owner")
+	name := r.PathValue("name")
+	path := r.URL.Query().Get("path")
+
+	entries, err := h.treeLister.ListTree(r.Context(), owner, name, path)
+	if err != nil {
+		switch {
+		case errors.Is(err, repo.ErrNotFound):
+			writeError(w, http.StatusNotFound, "REPO_NOT_FOUND", errorItem{
+				Type:    "not_found",
+				Message: "Repository or path does not exist",
+			})
+		case errors.Is(err, repo.ErrRateLimited):
+			writeError(w, http.StatusServiceUnavailable, "UPSTREAM_RATE_LIMITED", errorItem{
+				Type:    "rate_limited",
+				Message: "GitHub API rate limit exceeded",
+			})
+		default:
+			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", errorItem{
+				Type:    "internal",
+				Message: "Internal server error",
+			})
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(treeResponse{Data: entries})
+}
+
 type metadataResponse struct {
 	Data *repo.Metadata `json:"data"`
 }
 
 type issuesResponse struct {
 	Data []issues.Issue `json:"data"`
+}
+
+type treeResponse struct {
+	Data []tree.Entry `json:"data"`
 }
 
 type errorResponse struct {

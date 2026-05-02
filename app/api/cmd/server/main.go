@@ -27,7 +27,7 @@ func main() {
 	}
 
 	ghClient := github.NewClient(token)
-	h := handler.NewHandler(ghClient, ghClient)
+	h := handler.NewHandler(ghClient, ghClient, ghClient)
 
 	srv := newServer(config{port: port}, registerRoutes(h), logger)
 	if err := srv.Run(); err != nil {

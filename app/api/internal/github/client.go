@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sort"
+	"strings"
 
 	gh "github.com/google/go-github/v66/github"
 
 	"github.com/saaicasm/gitdub/internal/issues"
 	"github.com/saaicasm/gitdub/internal/repo"
+	"github.com/saaicasm/gitdub/internal/tree"
 )
 
 type Client struct {
@@ -78,6 +81,34 @@ func mapIssue(i *gh.Issue) issues.Issue {
 		UpdatedAt: i.GetUpdatedAt().Time,
 		URL:       i.GetHTMLURL(),
 	}
+}
+
+func (c *Client) ListTree(ctx context.Context, owner, name, path string) ([]tree.Entry, error) {
+	_, dir, resp, err := c.client.Repositories.GetContents(ctx, owner, name, path, nil)
+	if err != nil {
+		return nil, translateError(err, resp)
+	}
+
+	out := make([]tree.Entry, 0, len(dir))
+	for _, e := range dir {
+		out = append(out, tree.Entry{
+			Path: e.GetPath(),
+			Name: e.GetName(),
+			Type: e.GetType(),
+			Size: int64(e.GetSize()),
+			SHA:  e.GetSHA(),
+		})
+	}
+
+	sort.SliceStable(out, func(i, j int) bool {
+		a, b := out[i], out[j]
+		if (a.Type == "dir") != (b.Type == "dir") {
+			return a.Type == "dir"
+		}
+		return strings.ToLower(a.Name) < strings.ToLower(b.Name)
+	})
+
+	return out, nil
 }
 
 func translateError(err error, resp *gh.Response) error {
