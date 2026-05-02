@@ -401,3 +401,68 @@ a.nav-item {
   color: var(--text-subtle);
   background: rgba(0, 0, 0, 0.06);
 }
+
+.tree-status {
+  padding: 32px;
+  font-size: 13px;
+  color: var(--text-subtle);
+}
+
+.tree {
+  font-size: 13px;
+  padding: 8px 0;
+  user-select: none;
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding-right: 12px;
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.tree-row--dir {
+  cursor: pointer;
+}
+
+.tree-row--dir:hover {
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+.tree-row__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  color: var(--text-faint);
+  transition: transform 0.12s ease;
+}
+
+.tree-row__chevron--open {
+  transform: rotate(90deg);
+}
+
+.tree-row__icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-subtle);
+}
+
+.tree-row__name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-row--muted {
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: default;
+}

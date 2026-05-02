@@ -35,3 +35,15 @@ export interface Issue {
 export interface IssueListResponse {
   data: Issue[];
 }
+
+export interface TreeEntry {
+  path: string;
+  name: string;
+  type: string;
+  size: number;
+  sha: string;
+}
+
+export interface TreeListResponse {
+  data: TreeEntry[];
+}
