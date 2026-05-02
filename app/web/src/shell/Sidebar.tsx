@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
+import { NavLink, useParams } from 'react-router-dom';
 
 type NavId = 'overview' | 'tree' | 'stack' | 'issues' | 'metadata';
 
@@ -21,28 +22,53 @@ const sections: NavSection[] = [
   },
 ];
 
-export function Sidebar({ activeId = 'overview' }: { activeId?: NavId }) {
+function linkFor(id: NavId, repoBase: string): { to: string; end?: boolean } | null {
+  switch (id) {
+    case 'overview': return { to: repoBase, end: true };
+    case 'issues':   return { to: `${repoBase}/issues` };
+    default:         return null;
+  }
+}
+
+export function Sidebar() {
+  const { owner, name } = useParams();
+  const repoBase = owner && name ? `/w/${owner}/${name}` : null;
+
   return (
     <nav className="sidebar" aria-label="Workspace navigation">
       {sections.map((section) => (
         <Fragment key={section.label}>
           <div className="sidebar__label">{section.label}</div>
           {section.items.map((item) => {
-            const isActive = item.id === activeId;
+            const icon = (
+              <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+            );
+            const link = repoBase ? linkFor(item.id, repoBase) : null;
+
+            if (link) {
+              return (
+                <NavLink
+                  key={item.id}
+                  to={link.to}
+                  end={link.end}
+                  className={({ isActive }) =>
+                    'nav-item' + (isActive ? ' nav-item--active' : '')
+                  }
+                >
+                  {icon}
+                  {item.label}
+                </NavLink>
+              );
+            }
             return (
-              <button
+              <div
                 key={item.id}
-                type="button"
-                className={
-                  'nav-item' + (isActive ? ' nav-item--active' : '')
-                }
-                aria-current={isActive ? 'page' : undefined}
+                className="nav-item nav-item--disabled"
+                aria-disabled="true"
               >
-                <span className="nav-icon" aria-hidden="true">
-                  {item.icon}
-                </span>
+                {icon}
                 {item.label}
-              </button>
+              </div>
             );
           })}
         </Fragment>

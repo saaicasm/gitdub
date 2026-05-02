@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { fetchRepoMetadata } from "../api/repos";
-import type { RepoMetadata } from "../api/types";
+import { useNavigate } from "react-router-dom";
 
 function parseGithubUrl(input: string): { owner: string; name: string } | null {
   const trimmed = input.trim().replace(/\.git$/, "").replace(/\/$/, "");
@@ -9,33 +8,19 @@ function parseGithubUrl(input: string): { owner: string; name: string } | null {
   return { owner: match[1], name: match[2] };
 }
 
-export default function Home({
-  onLoaded,
-}: {
-  onLoaded: (repo: RepoMetadata) => void;
-}) {
+export default function Home() {
+  const navigate = useNavigate();
   const [url, setUrl] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function onFetch() {
+  function onFetch() {
     const parsed = parseGithubUrl(url);
     if (!parsed) {
       setError("Invalid GitHub URL");
       return;
     }
-
-    setLoading(true);
     setError(null);
-
-    try {
-      const data = await fetchRepoMetadata(parsed.owner, parsed.name);
-      onLoaded(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch");
-    } finally {
-      setLoading(false);
-    }
+    navigate(`/w/${parsed.owner}/${parsed.name}`);
   }
 
   return (
@@ -54,9 +39,9 @@ export default function Home({
         <button
           className="overview__btn"
           onClick={onFetch}
-          disabled={loading || !url.trim()}
+          disabled={!url.trim()}
         >
-          {loading ? "Fetching..." : "Fetch"}
+          Fetch
         </button>
       </div>
       {error && <div className="overview__error">{error}</div>}

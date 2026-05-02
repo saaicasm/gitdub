@@ -4,10 +4,18 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
 import App from "./App";
 import RepoPage from "./pages/RepoPage";
+import IssuesPage from "./pages/IssuesPage";
 
 const router = createBrowserRouter([
   { path: "/", element: <App /> },
-  { path: "/w/:owner/:name", element: <RepoPage /> },
+  {
+    path: "/w/:owner/:name",
+    element: <RepoPage />,
+    children: [
+      { index: true, element: <div /> },
+      { path: "issues", element: <IssuesPage /> },
+    ],
+  },
 ]);
 
 export default function Root() {
