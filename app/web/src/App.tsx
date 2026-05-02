@@ -1,20 +1,16 @@
-import { useState } from 'react';
 import './shell/shell.css';
-import { TopbarEmpty, TopbarLoaded } from './shell/Topbar';
+import { TopbarEmpty } from './shell/Topbar';
 import { Sidebar } from './shell/Sidebar';
 import Home from './pages/Home';
-import type { RepoMetadata } from './api/types';
 
 export default function App() {
-  const [repo, setRepo] = useState<RepoMetadata | null>(null);
-
   return (
     <div className="app-shell">
-      {repo ? <TopbarLoaded repo={repo} /> : <TopbarEmpty />}
+      <TopbarEmpty />
       <div className="shell-body">
-        <Sidebar activeId="overview" />
+        <Sidebar />
         <main className="main">
-          <Home onLoaded={setRepo} />
+          <Home />
         </main>
       </div>
     </div>
