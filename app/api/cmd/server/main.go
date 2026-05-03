@@ -8,6 +8,7 @@ import (
 
 	"github.com/saaicasm/gitdub/internal/github"
 	handler "github.com/saaicasm/gitdub/internal/http"
+	"github.com/saaicasm/gitdub/internal/stack"
 )
 
 func main() {
@@ -27,7 +28,8 @@ func main() {
 	}
 
 	ghClient := github.NewClient(token)
-	h := handler.NewHandler(ghClient, ghClient, ghClient)
+	stackSvc := stack.NewService(ghClient, ghClient)
+	h := handler.NewHandler(ghClient, ghClient, ghClient, stackSvc)
 
 	srv := newServer(config{port: port}, registerRoutes(h), logger)
 	if err := srv.Run(); err != nil {

@@ -111,6 +111,14 @@ func (c *Client) ListTree(ctx context.Context, owner, name, path string) ([]tree
 	return out, nil
 }
 
+func (c *Client) ListLanguages(ctx context.Context, owner, name string) (map[string]int, error) {
+	m, resp, err := c.client.Repositories.ListLanguages(ctx, owner, name)
+	if err != nil {
+		return nil, translateError(err, resp)
+	}
+	return m, nil
+}
+
 func translateError(err error, resp *gh.Response) error {
 	var rle *gh.RateLimitError
 	if errors.As(err, &rle) {
