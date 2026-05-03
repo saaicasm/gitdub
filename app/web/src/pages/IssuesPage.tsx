@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { fetchIssues } from "../api/issues";
 import type { Issue } from "../api/types";
 import { formatRelative } from "../utils/time";
+import { Modal } from "../components/Modal";
+import { IssueDetailViewer } from "../components/IssueDetailViewer";
 import { useRepoContext } from "./RepoPage";
 
 export default function IssuesPage() {
@@ -9,6 +11,7 @@ export default function IssuesPage() {
   const [issues, setIssues] = useState<Issue[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [openNumber, setOpenNumber] = useState<number | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -27,19 +30,38 @@ export default function IssuesPage() {
   }
 
   return (
-    <div className="issues-grid">
-      {issues.map(issue => <IssueCard key={issue.number} issue={issue} />)}
-    </div>
+    <>
+      <div className="issues-grid">
+        {issues.map(issue => (
+          <IssueCard
+            key={issue.number}
+            issue={issue}
+            onOpen={() => setOpenNumber(issue.number)}
+          />
+        ))}
+      </div>
+      <Modal open={openNumber !== null} onClose={() => setOpenNumber(null)}>
+        {openNumber !== null && (
+          <IssueDetailViewer
+            owner={repo.owner}
+            name={repo.name}
+            branch={repo.defaultBranch}
+            number={openNumber}
+            onClose={() => setOpenNumber(null)}
+          />
+        )}
+      </Modal>
+    </>
   );
 }
 
-function IssueCard({ issue }: { issue: Issue }) {
+function IssueCard({ issue, onOpen }: { issue: Issue; onOpen: () => void }) {
   return (
-    <a
+    <button
+      type="button"
       className="issue-card"
-      href={issue.url}
-      target="_blank"
-      rel="noopener noreferrer"
+      onClick={onOpen}
+      aria-label={`Issue #${issue.number}: ${issue.title}`}
     >
       <div className="issue-card__header">
         <span className={`state-pill state-pill--${issue.state}`}>{issue.state}</span>
@@ -71,6 +93,6 @@ function IssueCard({ issue }: { issue: Issue }) {
           )}
         </div>
       </div>
-    </a>
+    </button>
   );
 }

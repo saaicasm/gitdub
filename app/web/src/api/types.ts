@@ -36,6 +36,24 @@ export interface IssueListResponse {
   data: Issue[];
 }
 
+export interface Comment {
+  id: number;
+  author: IssueAuthor;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IssueDetail extends Omit<Issue, "comments"> {
+  body: string;
+  closedAt?: string;
+  comments: Comment[];
+}
+
+export interface IssueDetailResponse {
+  data: IssueDetail;
+}
+
 export interface TreeEntry {
   path: string;
   name: string;

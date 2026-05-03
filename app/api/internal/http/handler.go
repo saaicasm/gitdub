@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -15,15 +16,30 @@ import (
 )
 
 type Handler struct {
-	fetcher    repo.Fetcher
-	lister     issues.Lister
-	treeLister tree.Lister
-	analyzer   stack.Analyzer
-	blobReader blob.Reader
+	fetcher       repo.Fetcher
+	lister        issues.Lister
+	treeLister    tree.Lister
+	analyzer      stack.Analyzer
+	blobReader    blob.Reader
+	issueDetailer issues.Detailer
 }
 
-func NewHandler(fetcher repo.Fetcher, lister issues.Lister, treeLister tree.Lister, analyzer stack.Analyzer, blobReader blob.Reader) *Handler {
-	return &Handler{fetcher: fetcher, lister: lister, treeLister: treeLister, analyzer: analyzer, blobReader: blobReader}
+func NewHandler(
+	fetcher repo.Fetcher,
+	lister issues.Lister,
+	treeLister tree.Lister,
+	analyzer stack.Analyzer,
+	blobReader blob.Reader,
+	issueDetailer issues.Detailer,
+) *Handler {
+	return &Handler{
+		fetcher:       fetcher,
+		lister:        lister,
+		treeLister:    treeLister,
+		analyzer:      analyzer,
+		blobReader:    blobReader,
+		issueDetailer: issueDetailer,
+	}
 }
 
 func (h *Handler) GetMetadata(w http.ResponseWriter, r *http.Request) {
@@ -173,6 +189,54 @@ func (h *Handler) GetStack(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(stackResponse{Data: stk})
+}
+
+func (h *Handler) GetIssue(w http.ResponseWriter, r *http.Request) {
+	owner := r.PathValue("owner")
+	name := r.PathValue("name")
+	numStr := r.PathValue("number")
+
+	number, err := strconv.Atoi(numStr)
+	if err != nil || number < 1 {
+		writeError(w, http.StatusBadRequest, "BAD_REQUEST", errorItem{
+			Type:    "bad_request",
+			Message: "issue number must be a positive integer",
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	detail, err := h.issueDetailer.Detail(ctx, owner, name, number)
+	if err != nil {
+		switch {
+		case errors.Is(err, repo.ErrNotFound):
+			writeError(w, http.StatusNotFound, "ISSUE_NOT_FOUND", errorItem{
+				Type:    "not_found",
+				Message: "Issue does not exist or is not accessible",
+			})
+		case errors.Is(err, repo.ErrRateLimited):
+			writeError(w, http.StatusServiceUnavailable, "UPSTREAM_RATE_LIMITED", errorItem{
+				Type:    "rate_limited",
+				Message: "GitHub API rate limit exceeded",
+			})
+		default:
+			writeError(w, http.StatusBadGateway, "UPSTREAM_ERROR", errorItem{
+				Type:    "upstream",
+				Message: "Failed to fetch issue from GitHub",
+			})
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(issueDetailResponse{Data: detail})
+}
+
+type issueDetailResponse struct {
+	Data *issues.IssueDetail `json:"data"`
 }
 
 func (h *Handler) GetBlob(w http.ResponseWriter, r *http.Request) {
