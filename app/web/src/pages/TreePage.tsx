@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import { fetchTree } from "../api/tree";
 import type { TreeEntry } from "../api/types";
+import { fileIconSlug } from "../utils/fileIcon";
 import { useRepoContext } from "./RepoPage";
+import { Modal } from "../components/Modal";
+import { FileViewer } from "../components/FileViewer";
 
 export default function TreePage() {
   const { repo } = useRepoContext();
   const [rootEntries, setRootEntries] = useState<TreeEntry[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [openPath, setOpenPath] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -25,17 +29,30 @@ export default function TreePage() {
   }
 
   return (
-    <div className="tree">
-      {rootEntries.map(entry => (
-        <TreeNode
-          key={entry.path}
-          entry={entry}
-          owner={repo.owner}
-          name={repo.name}
-          depth={0}
-        />
-      ))}
-    </div>
+    <>
+      <div className="tree">
+        {rootEntries.map(entry => (
+          <TreeNode
+            key={entry.path}
+            entry={entry}
+            owner={repo.owner}
+            name={repo.name}
+            onOpenFile={setOpenPath}
+          />
+        ))}
+      </div>
+      <Modal open={openPath !== null} onClose={() => setOpenPath(null)}>
+        {openPath !== null && (
+          <FileViewer
+            owner={repo.owner}
+            name={repo.name}
+            branch={repo.defaultBranch}
+            path={openPath}
+            onClose={() => setOpenPath(null)}
+          />
+        )}
+      </Modal>
+    </>
   );
 }
 
@@ -43,68 +60,89 @@ type TreeNodeProps = {
   entry: TreeEntry;
   owner: string;
   name: string;
-  depth: number;
+  onOpenFile: (path: string) => void;
 };
 
-function TreeNode({ entry, owner, name, depth }: TreeNodeProps) {
+function TreeNode({ entry, owner, name, onOpenFile }: TreeNodeProps) {
   const [open, setOpen] = useState(false);
   const [children, setChildren] = useState<TreeEntry[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isDir = entry.type === "dir";
-  const indent = 12 + depth * 14;
 
-  function toggle() {
-    if (!isDir) return;
-    if (!children && !loading) {
-      setLoading(true);
-      setError(null);
-      fetchTree(owner, name, entry.path)
-        .then(setChildren)
-        .catch(err => setError(err.message))
-        .finally(() => setLoading(false));
+  function onClick() {
+    if (isDir) {
+      if (!children && !loading) {
+        setLoading(true);
+        setError(null);
+        fetchTree(owner, name, entry.path)
+          .then(setChildren)
+          .catch(err => setError(err.message))
+          .finally(() => setLoading(false));
+      }
+      setOpen(o => !o);
+    } else {
+      onOpenFile(entry.path);
     }
-    setOpen(o => !o);
   }
 
   return (
-    <>
+    <div className="tree-node">
       <div
-        className={"tree-row" + (isDir ? " tree-row--dir" : "")}
-        style={{ paddingLeft: indent }}
-        onClick={toggle}
-        role={isDir ? "button" : undefined}
+        className={"tree-row" + (isDir ? " tree-row--dir" : " tree-row--file")}
+        onClick={onClick}
+        role="button"
         aria-expanded={isDir ? open : undefined}
       >
         <span className={"tree-row__chevron" + (open ? " tree-row__chevron--open" : "")}>
           {isDir ? <ChevronIcon /> : null}
         </span>
         <span className="tree-row__icon">
-          {isDir ? <FolderIcon /> : <FileIcon />}
+          {isDir ? <FolderIcon /> : <FileIconForName name={entry.name} />}
         </span>
         <span className="tree-row__name">{entry.name}</span>
+        {!isDir && entry.size > 0 && (
+          <span className="tree-row__size">{formatBytes(entry.size)}</span>
+        )}
       </div>
-      {open && loading && (
-        <div className="tree-row tree-row--muted" style={{ paddingLeft: indent + 14 }}>
-          Loading...
+      {open && (
+        <div className="tree-children">
+          {loading && <div className="tree-row tree-row--muted">Loading...</div>}
+          {error && <div className="tree-row tree-row--muted">{error}</div>}
+          {children && children.map(child => (
+            <TreeNode
+              key={child.path}
+              entry={child}
+              owner={owner}
+              name={name}
+              onOpenFile={onOpenFile}
+            />
+          ))}
         </div>
       )}
-      {open && error && (
-        <div className="tree-row tree-row--muted" style={{ paddingLeft: indent + 14 }}>
-          {error}
-        </div>
-      )}
-      {open && children && children.map(child => (
-        <TreeNode
-          key={child.path}
-          entry={child}
-          owner={owner}
-          name={name}
-          depth={depth + 1}
-        />
-      ))}
-    </>
+    </div>
+  );
+}
+
+function FileIconForName({ name }: { name: string }) {
+  const slug = fileIconSlug(name);
+  if (!slug) return <FileIcon />;
+  return (
+    <img
+      className="tree-row__brand-icon"
+      src={`https://cdn.simpleicons.org/${slug}`}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      onError={e => {
+        const img = e.currentTarget;
+        const span = document.createElement("span");
+        span.className = "tree-row__icon-fallback";
+        span.innerHTML = GENERIC_FILE_SVG;
+        img.replaceWith(span);
+      }}
+    />
   );
 }
 
@@ -131,4 +169,15 @@ function FileIcon() {
       <path d="M8 1.5v3h3" />
     </svg>
   );
+}
+
+const GENERIC_FILE_SVG =
+  '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25">' +
+  '<path d="M3 1.5h5l3 3V12a.5.5 0 01-.5.5h-7.5a.5.5 0 01-.5-.5V2a.5.5 0 01.5-.5z"/>' +
+  '<path d="M8 1.5v3h3"/></svg>';
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }

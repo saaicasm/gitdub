@@ -12,5 +12,6 @@ func registerRoutes(h *handler.Handler) http.Handler {
 	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/issues", h.ListIssues)
 	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/tree", h.ListTree)
 	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/stack", h.GetStack)
+	mux.HandleFunc("GET /api/v1/repos/{owner}/{name}/blob", h.GetBlob)
 	return mux
 }

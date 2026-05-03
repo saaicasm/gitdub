@@ -69,3 +69,18 @@ export interface Stack {
 export interface StackResponse {
   data: Stack;
 }
+
+export interface Blob {
+  path: string;
+  size: number;
+  sha: string;
+  content: string;
+  isBinary: boolean;
+  tooLarge: boolean;
+  htmlUrl: string;
+  downloadUrl: string;
+}
+
+export interface BlobResponse {
+  data: Blob;
+}
