@@ -47,3 +47,25 @@ export interface TreeEntry {
 export interface TreeListResponse {
   data: TreeEntry[];
 }
+
+export interface Language {
+  name: string;
+  bytes: number;
+  percent: number;
+}
+
+export interface Tool {
+  name: string;
+  category: string;
+  evidence: string;
+  iconSlug: string;
+}
+
+export interface Stack {
+  languages: Language[];
+  tools: Tool[];
+}
+
+export interface StackResponse {
+  data: Stack;
+}

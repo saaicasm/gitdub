@@ -24,66 +24,67 @@ type signature struct {
 	prefix   bool
 	tool     string
 	category string
+	iconSlug string
 }
 
 var signatures = []signature{
 	// package / runtime
-	{pattern: "package.json", tool: "Node.js", category: "package"},
-	{pattern: "package-lock.json", tool: "npm", category: "package"},
-	{pattern: "pnpm-lock.yaml", tool: "pnpm", category: "package"},
-	{pattern: "yarn.lock", tool: "Yarn", category: "package"},
-	{pattern: "go.mod", tool: "Go modules", category: "package"},
+	{pattern: "package.json", tool: "Node.js", category: "package", iconSlug: "nodedotjs"},
+	{pattern: "package-lock.json", tool: "npm", category: "package", iconSlug: "npm"},
+	{pattern: "pnpm-lock.yaml", tool: "pnpm", category: "package", iconSlug: "pnpm"},
+	{pattern: "yarn.lock", tool: "Yarn", category: "package", iconSlug: "yarn"},
+	{pattern: "go.mod", tool: "Go modules", category: "package", iconSlug: "go"},
 	{pattern: "Cargo.toml", tool: "Cargo", category: "package"},
-	{pattern: "pyproject.toml", tool: "pyproject", category: "package"},
-	{pattern: "requirements.txt", tool: "pip", category: "package"},
+	{pattern: "pyproject.toml", tool: "pyproject", category: "package", iconSlug: "python"},
+	{pattern: "requirements.txt", tool: "pip", category: "package", iconSlug: "pypi"},
 	{pattern: "Pipfile", tool: "Pipenv", category: "package"},
-	{pattern: "Gemfile", tool: "Bundler", category: "package"},
-	{pattern: "composer.json", tool: "Composer", category: "package"},
+	{pattern: "Gemfile", tool: "Bundler", category: "package", iconSlug: "rubygems"},
+	{pattern: "composer.json", tool: "Composer", category: "package", iconSlug: "composer"},
 
 	// language tooling
-	{pattern: "tsconfig.json", tool: "TypeScript", category: "lang"},
+	{pattern: "tsconfig.json", tool: "TypeScript", category: "lang", iconSlug: "typescript"},
 
 	// build
-	{pattern: "Makefile", tool: "Make", category: "build"},
-	{pattern: "vite.config.ts", tool: "Vite", category: "build"},
-	{pattern: "vite.config.js", tool: "Vite", category: "build"},
-	{pattern: "webpack.config.js", tool: "Webpack", category: "build"},
-	{pattern: "rollup.config.js", tool: "Rollup", category: "build"},
-	{pattern: "esbuild.config.js", tool: "esbuild", category: "build"},
+	{pattern: "Makefile", tool: "Make", category: "build", iconSlug: "make"},
+	{pattern: "vite.config.ts", tool: "Vite", category: "build", iconSlug: "vite"},
+	{pattern: "vite.config.js", tool: "Vite", category: "build", iconSlug: "vite"},
+	{pattern: "webpack.config.js", tool: "Webpack", category: "build", iconSlug: "webpack"},
+	{pattern: "rollup.config.js", tool: "Rollup", category: "build", iconSlug: "rollupdotjs"},
+	{pattern: "esbuild.config.js", tool: "esbuild", category: "build", iconSlug: "esbuild"},
 
 	// framework
-	{pattern: "next.config.js", tool: "Next.js", category: "framework"},
-	{pattern: "next.config.ts", tool: "Next.js", category: "framework"},
-	{pattern: "nuxt.config.ts", tool: "Nuxt", category: "framework"},
-	{pattern: "tailwind.config.js", tool: "Tailwind", category: "framework"},
-	{pattern: "tailwind.config.ts", tool: "Tailwind", category: "framework"},
-	{pattern: "svelte.config.js", tool: "Svelte", category: "framework"},
-	{pattern: "angular.json", tool: "Angular", category: "framework"},
+	{pattern: "next.config.js", tool: "Next.js", category: "framework", iconSlug: "nextdotjs"},
+	{pattern: "next.config.ts", tool: "Next.js", category: "framework", iconSlug: "nextdotjs"},
+	{pattern: "nuxt.config.ts", tool: "Nuxt", category: "framework", iconSlug: "nuxt"},
+	{pattern: "tailwind.config.js", tool: "Tailwind", category: "framework", iconSlug: "tailwindcss"},
+	{pattern: "tailwind.config.ts", tool: "Tailwind", category: "framework", iconSlug: "tailwindcss"},
+	{pattern: "svelte.config.js", tool: "Svelte", category: "framework", iconSlug: "svelte"},
+	{pattern: "angular.json", tool: "Angular", category: "framework", iconSlug: "angular"},
 
 	// lint / format
-	{pattern: "eslint.config.js", tool: "ESLint", category: "lint"},
-	{pattern: "eslint.config.mjs", tool: "ESLint", category: "lint"},
-	{pattern: ".eslintrc", prefix: true, tool: "ESLint", category: "lint"},
-	{pattern: ".prettierrc", prefix: true, tool: "Prettier", category: "lint"},
-	{pattern: "prettier.config.js", tool: "Prettier", category: "lint"},
-	{pattern: "ruff.toml", tool: "Ruff", category: "lint"},
+	{pattern: "eslint.config.js", tool: "ESLint", category: "lint", iconSlug: "eslint"},
+	{pattern: "eslint.config.mjs", tool: "ESLint", category: "lint", iconSlug: "eslint"},
+	{pattern: ".eslintrc", prefix: true, tool: "ESLint", category: "lint", iconSlug: "eslint"},
+	{pattern: ".prettierrc", prefix: true, tool: "Prettier", category: "lint", iconSlug: "prettier"},
+	{pattern: "prettier.config.js", tool: "Prettier", category: "lint", iconSlug: "prettier"},
+	{pattern: "ruff.toml", tool: "Ruff", category: "lint", iconSlug: "ruff"},
 	{pattern: ".golangci.yml", tool: "golangci-lint", category: "lint"},
 	{pattern: ".golangci.yaml", tool: "golangci-lint", category: "lint"},
 
 	// test
-	{pattern: "jest.config.js", tool: "Jest", category: "test"},
-	{pattern: "jest.config.ts", tool: "Jest", category: "test"},
-	{pattern: "vitest.config.ts", tool: "Vitest", category: "test"},
+	{pattern: "jest.config.js", tool: "Jest", category: "test", iconSlug: "jest"},
+	{pattern: "jest.config.ts", tool: "Jest", category: "test", iconSlug: "jest"},
+	{pattern: "vitest.config.ts", tool: "Vitest", category: "test", iconSlug: "vitest"},
 
 	// container
-	{pattern: "Dockerfile", tool: "Docker", category: "container"},
+	{pattern: "Dockerfile", tool: "Docker", category: "container", iconSlug: "docker"},
 	{pattern: "docker-compose.yml", tool: "Docker Compose", category: "container"},
 	{pattern: "docker-compose.yaml", tool: "Docker Compose", category: "container"},
 
 	// ci
-	{pattern: ".gitlab-ci.yml", tool: "GitLab CI", category: "ci"},
-	{pattern: "circle.yml", tool: "CircleCI", category: "ci"},
-	{pattern: ".circleci", isDir: true, tool: "CircleCI", category: "ci"},
+	{pattern: ".gitlab-ci.yml", tool: "GitLab CI", category: "ci", iconSlug: "gitlab"},
+	{pattern: "circle.yml", tool: "CircleCI", category: "ci", iconSlug: "circleci"},
+	{pattern: ".circleci", isDir: true, tool: "CircleCI", category: "ci", iconSlug: "circleci"},
 }
 
 func (s *Service) Analyze(ctx context.Context, owner, name string) (*Stack, error) {
@@ -137,7 +138,12 @@ func (s *Service) Analyze(ctx context.Context, owner, name string) (*Stack, erro
 		}
 
 		if evidence != "" {
-			tools = append(tools, Tool{Name: sig.tool, Category: sig.category, Evidence: evidence})
+			tools = append(tools, Tool{
+				Name:     sig.tool,
+				Category: sig.category,
+				Evidence: evidence,
+				IconSlug: sig.iconSlug,
+			})
 			seen[sig.tool] = struct{}{}
 		}
 	}
@@ -148,7 +154,12 @@ func (s *Service) Analyze(ctx context.Context, owner, name string) (*Stack, erro
 			if err == nil {
 				for _, e := range ghEntries {
 					if e.Type == "dir" && e.Name == "workflows" {
-						tools = append(tools, Tool{Name: "GitHub Actions", Category: "ci", Evidence: ".github/workflows/"})
+						tools = append(tools, Tool{
+							Name:     "GitHub Actions",
+							Category: "ci",
+							Evidence: ".github/workflows/",
+							IconSlug: "githubactions",
+						})
 						break
 					}
 				}

@@ -12,6 +12,7 @@ type Tool struct {
 	Name     string `json:"name"`
 	Category string `json:"category"`
 	Evidence string `json:"evidence"`
+	IconSlug string `json:"iconSlug"`
 }
 
 type Stack struct {
