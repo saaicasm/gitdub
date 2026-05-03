@@ -35,3 +35,37 @@ export interface Issue {
 export interface IssueListResponse {
   data: Issue[];
 }
+
+export interface TreeEntry {
+  path: string;
+  name: string;
+  type: string;
+  size: number;
+  sha: string;
+}
+
+export interface TreeListResponse {
+  data: TreeEntry[];
+}
+
+export interface Language {
+  name: string;
+  bytes: number;
+  percent: number;
+}
+
+export interface Tool {
+  name: string;
+  category: string;
+  evidence: string;
+  iconSlug: string;
+}
+
+export interface Stack {
+  languages: Language[];
+  tools: Tool[];
+}
+
+export interface StackResponse {
+  data: Stack;
+}

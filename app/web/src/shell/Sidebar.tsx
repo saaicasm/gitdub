@@ -26,6 +26,8 @@ function linkFor(id: NavId, repoBase: string): { to: string; end?: boolean } | n
   switch (id) {
     case 'overview': return { to: repoBase, end: true };
     case 'issues':   return { to: `${repoBase}/issues` };
+    case 'tree':     return { to: `${repoBase}/tree` };
+    case 'stack':    return { to: `${repoBase}/stack` };
     default:         return null;
   }
 }
