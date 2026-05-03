@@ -4,11 +4,14 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"path"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	gh "github.com/google/go-github/v66/github"
 
+	"github.com/saaicasm/gitdub/internal/blob"
 	"github.com/saaicasm/gitdub/internal/issues"
 	"github.com/saaicasm/gitdub/internal/repo"
 	"github.com/saaicasm/gitdub/internal/tree"
@@ -108,6 +111,60 @@ func (c *Client) ListTree(ctx context.Context, owner, name, path string) ([]tree
 		return strings.ToLower(a.Name) < strings.ToLower(b.Name)
 	})
 
+	return out, nil
+}
+
+const maxBlobSize = 1024 * 1024 // 1 MB
+
+var binaryExts = map[string]struct{}{
+	".png": {}, ".jpg": {}, ".jpeg": {}, ".gif": {}, ".webp": {}, ".ico": {},
+	".pdf": {}, ".zip": {}, ".tar": {}, ".gz": {}, ".tgz": {}, ".bz2": {}, ".7z": {},
+	".exe": {}, ".dll": {}, ".so": {}, ".dylib": {}, ".bin": {},
+	".woff": {}, ".woff2": {}, ".ttf": {}, ".otf": {}, ".eot": {},
+	".mp3": {}, ".mp4": {}, ".mov": {}, ".avi": {}, ".webm": {}, ".wav": {}, ".flac": {},
+	".class": {}, ".pyc": {}, ".o": {}, ".a": {}, ".jar": {}, ".war": {},
+}
+
+func (c *Client) ReadBlob(ctx context.Context, owner, name, filePath string) (*blob.Blob, error) {
+	file, _, resp, err := c.client.Repositories.GetContents(ctx, owner, name, filePath, nil)
+	if err != nil {
+		return nil, translateError(err, resp)
+	}
+	if file == nil {
+		return nil, repo.ErrNotFound
+	}
+
+	out := &blob.Blob{
+		Path:        file.GetPath(),
+		Size:        file.GetSize(),
+		SHA:         file.GetSHA(),
+		HTMLURL:     file.GetHTMLURL(),
+		DownloadURL: file.GetDownloadURL(),
+	}
+
+	if file.GetSize() > maxBlobSize {
+		out.TooLarge = true
+		return out, nil
+	}
+
+	ext := strings.ToLower(path.Ext(file.GetName()))
+	if _, isBin := binaryExts[ext]; isBin {
+		out.IsBinary = true
+		return out, nil
+	}
+
+	decoded, err := file.GetContent()
+	if err != nil {
+		out.IsBinary = true
+		return out, nil
+	}
+
+	if strings.ContainsRune(decoded, 0) || !utf8.ValidString(decoded) {
+		out.IsBinary = true
+		return out, nil
+	}
+
+	out.Content = decoded
 	return out, nil
 }
 

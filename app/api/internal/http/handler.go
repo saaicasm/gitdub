@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/saaicasm/gitdub/internal/blob"
 	"github.com/saaicasm/gitdub/internal/issues"
 	"github.com/saaicasm/gitdub/internal/repo"
 	"github.com/saaicasm/gitdub/internal/stack"
@@ -18,10 +19,11 @@ type Handler struct {
 	lister     issues.Lister
 	treeLister tree.Lister
 	analyzer   stack.Analyzer
+	blobReader blob.Reader
 }
 
-func NewHandler(fetcher repo.Fetcher, lister issues.Lister, treeLister tree.Lister, analyzer stack.Analyzer) *Handler {
-	return &Handler{fetcher: fetcher, lister: lister, treeLister: treeLister, analyzer: analyzer}
+func NewHandler(fetcher repo.Fetcher, lister issues.Lister, treeLister tree.Lister, analyzer stack.Analyzer, blobReader blob.Reader) *Handler {
+	return &Handler{fetcher: fetcher, lister: lister, treeLister: treeLister, analyzer: analyzer, blobReader: blobReader}
 }
 
 func (h *Handler) GetMetadata(w http.ResponseWriter, r *http.Request) {
@@ -171,6 +173,50 @@ func (h *Handler) GetStack(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(stackResponse{Data: stk})
+}
+
+func (h *Handler) GetBlob(w http.ResponseWriter, r *http.Request) {
+	owner := r.PathValue("owner")
+	name := r.PathValue("name")
+	path := r.URL.Query().Get("path")
+
+	if path == "" {
+		writeError(w, http.StatusBadRequest, "BAD_REQUEST", errorItem{
+			Type:    "bad_request",
+			Message: "path query parameter is required",
+		})
+		return
+	}
+
+	b, err := h.blobReader.ReadBlob(r.Context(), owner, name, path)
+	if err != nil {
+		switch {
+		case errors.Is(err, repo.ErrNotFound):
+			writeError(w, http.StatusNotFound, "FILE_NOT_FOUND", errorItem{
+				Type:    "not_found",
+				Message: "File does not exist or is not accessible",
+			})
+		case errors.Is(err, repo.ErrRateLimited):
+			writeError(w, http.StatusServiceUnavailable, "UPSTREAM_RATE_LIMITED", errorItem{
+				Type:    "rate_limited",
+				Message: "GitHub API rate limit exceeded",
+			})
+		default:
+			writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", errorItem{
+				Type:    "internal",
+				Message: "Internal server error",
+			})
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(blobResponse{Data: b})
+}
+
+type blobResponse struct {
+	Data *blob.Blob `json:"data"`
 }
 
 type stackResponse struct {
