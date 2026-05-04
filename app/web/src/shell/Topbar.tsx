@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatRelative } from "../utils/time";
+import { formatNumber, formatTimeAgo } from "../utils/timeago";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 
 export type Repo = {
@@ -9,14 +10,8 @@ export type Repo = {
   name: string;
   defaultBranch: string;
   stars: number;
+  pushedAt: string;
 };
-
-function formatStars(n: number): string {
-  if (n < 1000) return String(n);
-  return `${Math.ceil(n / 100) / 10}k`;
-}
-
-const PLACEHOLDER_UPDATED_AT = new Date(Date.now() - 3 * 60 * 60 * 1000);
 
 export function TopbarEmpty() {
   return (
@@ -42,6 +37,7 @@ export function TopbarLoaded({ repo }: { repo: Repo }) {
   }, [repo.owner, repo.name]);
 
   const pulledIsStale = Date.now() - pulledAt.getTime() >= 60 * 60 * 1000;
+  const lastCommitTime = formatTimeAgo(repo.pushedAt);
 
   return (
     <div className="topbar">
@@ -63,14 +59,14 @@ export function TopbarLoaded({ repo }: { repo: Repo }) {
           pulled {formatRelative(pulledAt)}
         </div>
         <div className="meta-divider" />
-        <div className="meta-item">{formatStars(repo.stars)} stars</div>
+        <div className="meta-item">{formatNumber(repo.stars)} stars</div>
         <div className="meta-divider" />
         <div className="meta-item">
           <svg className="meta-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25">
             <circle cx="8" cy="8" r="6" />
             <path d="M8 4.5V8l2.25 1.5" strokeLinecap="round" />
           </svg>
-          updated {formatRelative(PLACEHOLDER_UPDATED_AT)}
+          updated {lastCommitTime}
         </div>
       </div>
       <button className="pull-btn" onClick={() => setPulledAt(new Date())}>
@@ -82,7 +78,7 @@ export function TopbarLoaded({ repo }: { repo: Repo }) {
       <ConfirmDialog
         open={confirmOpen}
         title="Clear current workspace repo"
-        message="This will remove the loaded repository and return you to the start screen."
+        message="This will remove the current repository from workspace."
         confirmLabel="Clear repo"
         cancelLabel="Cancel"
         destructive

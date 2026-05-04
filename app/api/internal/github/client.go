@@ -33,12 +33,33 @@ func (c *Client) Fetch(ctx context.Context, owner, name string) (*repo.Metadata,
 	if err != nil {
 		return nil, translateError(err, resp)
 	}
+
+	license := ""
+	if r.License != nil {
+		license = r.License.GetSPDXID()
+	}
+
+	homepage := ""
+	if r.Homepage != nil {
+		homepage = *r.Homepage
+	}
+
 	return &repo.Metadata{
-		AvatarURL:     r.GetOwner().GetAvatarURL(),
-		Owner:         r.GetOwner().GetLogin(),
-		Name:          r.GetName(),
-		DefaultBranch: r.GetDefaultBranch(),
-		Stars:         r.GetStargazersCount(),
+		AvatarURL:       r.GetOwner().GetAvatarURL(),
+		Owner:           r.GetOwner().GetLogin(),
+		Name:            r.GetName(),
+		DefaultBranch:   r.GetDefaultBranch(),
+		Stars:           r.GetStargazersCount(),
+		Description:     r.GetDescription(),
+		Topics:          r.Topics,
+		Homepage:        homepage,
+		Forks:           r.GetForksCount(),
+		Watchers:        r.GetWatchersCount(),
+		OpenIssues:      r.GetOpenIssuesCount(),
+		License:         license,
+		PrimaryLanguage: r.GetLanguage(),
+		CreatedAt:       r.GetCreatedAt().Time,
+		PushedAt:        r.GetPushedAt().Time,
 	}, nil
 }
 

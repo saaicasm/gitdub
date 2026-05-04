@@ -4,6 +4,16 @@ export interface RepoMetadata {
   name: string;
   defaultBranch: string;
   stars: number;
+  description: string;
+  topics: string[];
+  homepage: string;
+  forks: number;
+  watchers: number;
+  openIssues: number;
+  license: string;
+  primaryLanguage: string;
+  createdAt: string;
+  pushedAt: string;
 }
 
 export interface RepoMetadataResponse {
