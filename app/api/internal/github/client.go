@@ -42,13 +42,17 @@ func (c *Client) Fetch(ctx context.Context, owner, name string) (*repo.Metadata,
 	}, nil
 }
 
-func (c *Client) List(ctx context.Context, owner, name string, opts issues.ListOptions) ([]issues.Issue, error) {
+func (c *Client) List(ctx context.Context, owner, name string, opts issues.ListOptions) (*issues.IssueListResult, error) {
 	ghOpts := &gh.IssueListByRepoOptions{
 		State: opts.State,
 		ListOptions: gh.ListOptions{
 			Page:    opts.Page,
 			PerPage: opts.PerPage,
 		},
+	}
+
+	if len(opts.Labels) > 0 {
+		ghOpts.Labels = opts.Labels
 	}
 
 	raw, resp, err := c.client.Issues.ListByRepo(ctx, owner, name, ghOpts)
@@ -63,7 +67,14 @@ func (c *Client) List(ctx context.Context, owner, name string, opts issues.ListO
 		}
 		out = append(out, mapIssue(i))
 	}
-	return out, nil
+
+	hasNext := resp.NextPage != 0
+	return &issues.IssueListResult{
+		Items:   out,
+		Page:    opts.Page,
+		PerPage: opts.PerPage,
+		HasNext: hasNext,
+	}, nil
 }
 
 func (c *Client) Detail(ctx context.Context, owner, name string, number int) (*issues.IssueDetail, error) {

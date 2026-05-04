@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/saaicasm/gitdub/internal/blob"
@@ -97,10 +98,19 @@ func (h *Handler) ListIssues(w http.ResponseWriter, r *http.Request) {
 		perPage = 100
 	}
 
-	list, err := h.lister.List(r.Context(), owner, name, issues.ListOptions{
+	var labels []string
+	if labelsStr := q.Get("labels"); labelsStr != "" {
+		labels = strings.Split(labelsStr, ",")
+		for i := range labels {
+			labels[i] = strings.TrimSpace(labels[i])
+		}
+	}
+
+	result, err := h.lister.List(r.Context(), owner, name, issues.ListOptions{
 		State:   state,
 		Page:    page,
 		PerPage: perPage,
+		Labels:  labels,
 	})
 	if err != nil {
 		switch {
@@ -125,7 +135,7 @@ func (h *Handler) ListIssues(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(issuesResponse{Data: list})
+	_ = json.NewEncoder(w).Encode(issuesResponse{Data: result})
 }
 
 func (h *Handler) ListTree(w http.ResponseWriter, r *http.Request) {
@@ -292,7 +302,7 @@ type metadataResponse struct {
 }
 
 type issuesResponse struct {
-	Data []issues.Issue `json:"data"`
+	Data *issues.IssueListResult `json:"data"`
 }
 
 type treeResponse struct {

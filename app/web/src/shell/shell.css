@@ -270,11 +270,77 @@ a.nav-item {
   color: var(--text-subtle);
 }
 
+.issues-filters {
+  padding: 16px 20px;
+  border-bottom: 0.5px solid var(--border);
+  background: var(--bg);
+}
+
+.label-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-tag {
+  padding: 6px 12px;
+  border: 0.5px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-tag:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.filter-tag--active {
+  background: var(--accent-bg);
+  border-color: var(--accent-text);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
 .issues-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 12px;
   padding: 20px;
+}
+
+.issues-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px;
+  border-top: 0.5px solid var(--border);
+  background: var(--bg);
+}
+
+.issues-pagination button {
+  padding: 6px 12px;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.issues-pagination button:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.issues-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .issue-card {

@@ -32,8 +32,15 @@ export interface Issue {
   url: string;
 }
 
+export interface IssueListResult {
+  items: Issue[];
+  page: number;
+  perPage: number;
+  hasNext: boolean;
+}
+
 export interface IssueListResponse {
-  data: Issue[];
+  data: IssueListResult;
 }
 
 export interface Comment {
