@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { formatRelative } from "../utils/time";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 
 export type Repo = {
   avatarUrl: string;
@@ -25,8 +27,10 @@ export function TopbarEmpty() {
 }
 
 export function TopbarLoaded({ repo }: { repo: Repo }) {
+  const navigate = useNavigate();
   const [pulledAt, setPulledAt] = useState<Date>(() => new Date());
   const [, setTick] = useState(0);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 60_000);
@@ -72,6 +76,22 @@ export function TopbarLoaded({ repo }: { repo: Repo }) {
       <button className="pull-btn" onClick={() => setPulledAt(new Date())}>
         Pull latest
       </button>
+      <button className="add-repo-btn" onClick={() => setConfirmOpen(true)}>
+        Add new repo
+      </button>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Clear current workspace repo"
+        message="This will remove the loaded repository and return you to the start screen."
+        confirmLabel="Clear repo"
+        cancelLabel="Cancel"
+        destructive
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          navigate("/");
+        }}
+      />
     </div>
   );
 }
