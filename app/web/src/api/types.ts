@@ -32,8 +32,33 @@ export interface Issue {
   url: string;
 }
 
+export interface IssueListResult {
+  items: Issue[];
+  page: number;
+  perPage: number;
+  hasNext: boolean;
+}
+
 export interface IssueListResponse {
-  data: Issue[];
+  data: IssueListResult;
+}
+
+export interface Comment {
+  id: number;
+  author: IssueAuthor;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IssueDetail extends Omit<Issue, "comments"> {
+  body: string;
+  closedAt?: string;
+  comments: Comment[];
+}
+
+export interface IssueDetailResponse {
+  data: IssueDetail;
 }
 
 export interface TreeEntry {

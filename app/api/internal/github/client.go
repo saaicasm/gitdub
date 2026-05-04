@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	gh "github.com/google/go-github/v66/github"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/saaicasm/gitdub/internal/blob"
 	"github.com/saaicasm/gitdub/internal/issues"
@@ -41,13 +42,17 @@ func (c *Client) Fetch(ctx context.Context, owner, name string) (*repo.Metadata,
 	}, nil
 }
 
-func (c *Client) List(ctx context.Context, owner, name string, opts issues.ListOptions) ([]issues.Issue, error) {
+func (c *Client) List(ctx context.Context, owner, name string, opts issues.ListOptions) (*issues.IssueListResult, error) {
 	ghOpts := &gh.IssueListByRepoOptions{
 		State: opts.State,
 		ListOptions: gh.ListOptions{
 			Page:    opts.Page,
 			PerPage: opts.PerPage,
 		},
+	}
+
+	if len(opts.Labels) > 0 {
+		ghOpts.Labels = opts.Labels
 	}
 
 	raw, resp, err := c.client.Issues.ListByRepo(ctx, owner, name, ghOpts)
@@ -62,7 +67,76 @@ func (c *Client) List(ctx context.Context, owner, name string, opts issues.ListO
 		}
 		out = append(out, mapIssue(i))
 	}
-	return out, nil
+
+	hasNext := resp.NextPage != 0
+	return &issues.IssueListResult{
+		Items:   out,
+		Page:    opts.Page,
+		PerPage: opts.PerPage,
+		HasNext: hasNext,
+	}, nil
+}
+
+func (c *Client) Detail(ctx context.Context, owner, name string, number int) (*issues.IssueDetail, error) {
+	var (
+		rawIssue    *gh.Issue
+		rawComments []*gh.IssueComment
+	)
+
+	g, gctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		i, resp, err := c.client.Issues.Get(gctx, owner, name, number)
+		if err != nil {
+			return translateError(err, resp)
+		}
+		rawIssue = i
+		return nil
+	})
+
+	g.Go(func() error {
+		cs, resp, err := c.client.Issues.ListComments(gctx, owner, name, number, &gh.IssueListCommentsOptions{
+			ListOptions: gh.ListOptions{PerPage: 100},
+		})
+		if err != nil {
+			return translateError(err, resp)
+		}
+		rawComments = cs
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	detail := &issues.IssueDetail{
+		Issue: mapIssue(rawIssue),
+		Body:  rawIssue.GetBody(),
+	}
+	if rawIssue.ClosedAt != nil {
+		t := rawIssue.ClosedAt.Time
+		detail.ClosedAt = &t
+	}
+
+	detail.Comments = make([]issues.Comment, 0, len(rawComments))
+	for _, gc := range rawComments {
+		detail.Comments = append(detail.Comments, issues.Comment{
+			ID: gc.GetID(),
+			Author: issues.User{
+				Login:     gc.GetUser().GetLogin(),
+				AvatarURL: gc.GetUser().GetAvatarURL(),
+			},
+			Body:      gc.GetBody(),
+			CreatedAt: gc.GetCreatedAt().Time,
+			UpdatedAt: gc.GetUpdatedAt().Time,
+		})
+	}
+
+	sort.SliceStable(detail.Comments, func(i, j int) bool {
+		return detail.Comments[i].CreatedAt.Before(detail.Comments[j].CreatedAt)
+	})
+
+	return detail, nil
 }
 
 func mapIssue(i *gh.Issue) issues.Issue {

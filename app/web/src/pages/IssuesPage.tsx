@@ -1,45 +1,116 @@
 import { useEffect, useState } from "react";
 import { fetchIssues } from "../api/issues";
-import type { Issue } from "../api/types";
+import type { Issue, IssueListResult } from "../api/types";
 import { formatRelative } from "../utils/time";
+import { Modal } from "../components/Modal";
+import { IssueDetailViewer } from "../components/IssueDetailViewer";
 import { useRepoContext } from "./RepoPage";
 
 export default function IssuesPage() {
   const { repo } = useRepoContext();
-  const [issues, setIssues] = useState<Issue[] | null>(null);
+  const [result, setResult] = useState<IssueListResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [openNumber, setOpenNumber] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
 
-    fetchIssues(repo.owner, repo.name)
-      .then(setIssues)
+    fetchIssues(repo.owner, repo.name, {
+      page,
+      perPage: 30,
+      state: "open",
+      labels: selectedLabels.length > 0 ? selectedLabels : undefined,
+    })
+      .then(setResult)
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
-  }, [repo.owner, repo.name]);
+  }, [repo.owner, repo.name, page, selectedLabels]);
 
   if (loading) return <div className="issues-status">Loading...</div>;
   if (error) return <div className="issues-status">{error}</div>;
-  if (!issues || issues.length === 0) {
+  if (!result || result.items.length === 0) {
     return <div className="issues-status">No open issues.</div>;
   }
 
+  const allLabels = Array.from(
+    new Set(result.items.flatMap(issue => issue.labels.map(l => l.name)))
+  );
+
   return (
-    <div className="issues-grid">
-      {issues.map(issue => <IssueCard key={issue.number} issue={issue} />)}
-    </div>
+    <>
+      <div className="issues-filters">
+        <div className="label-filter">
+          {allLabels.map(label => (
+            <button
+              key={label}
+              className={`filter-tag ${selectedLabels.includes(label) ? "filter-tag--active" : ""}`}
+              onClick={() => {
+                if (selectedLabels.includes(label)) {
+                  setSelectedLabels(selectedLabels.filter(l => l !== label));
+                } else {
+                  setSelectedLabels([...selectedLabels, label]);
+                }
+                setPage(1);
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="issues-grid">
+        {result.items.map(issue => (
+          <IssueCard
+            key={issue.number}
+            issue={issue}
+            onOpen={() => setOpenNumber(issue.number)}
+          />
+        ))}
+      </div>
+
+      <div className="issues-pagination">
+        <button
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+          disabled={page === 1}
+        >
+          Previous
+        </button>
+        <span>Page {result.page}</span>
+        <button
+          onClick={() => setPage(p => p + 1)}
+          disabled={!result.hasNext}
+        >
+          Next
+        </button>
+      </div>
+
+      <Modal open={openNumber !== null} onClose={() => setOpenNumber(null)}>
+        {openNumber !== null && (
+          <IssueDetailViewer
+            owner={repo.owner}
+            name={repo.name}
+            branch={repo.defaultBranch}
+            number={openNumber}
+            onClose={() => setOpenNumber(null)}
+          />
+        )}
+      </Modal>
+    </>
   );
 }
 
-function IssueCard({ issue }: { issue: Issue }) {
+function IssueCard({ issue, onOpen }: { issue: Issue; onOpen: () => void }) {
   return (
-    <a
+    <button
+      type="button"
       className="issue-card"
-      href={issue.url}
-      target="_blank"
-      rel="noopener noreferrer"
+      onClick={onOpen}
+      aria-label={`Issue #${issue.number}: ${issue.title}`}
     >
       <div className="issue-card__header">
         <span className={`state-pill state-pill--${issue.state}`}>{issue.state}</span>
@@ -71,6 +142,6 @@ function IssueCard({ issue }: { issue: Issue }) {
           )}
         </div>
       </div>
-    </a>
+    </button>
   );
 }

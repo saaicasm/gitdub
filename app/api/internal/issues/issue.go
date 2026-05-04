@@ -31,8 +31,35 @@ type ListOptions struct {
 	State   string
 	Page    int
 	PerPage int
+	Labels  []string
+}
+
+type Comment struct {
+	ID        int64     `json:"id"`
+	Author    User      `json:"author"`
+	Body      string    `json:"body"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+type IssueDetail struct {
+	Issue
+	Body     string     `json:"body"`
+	ClosedAt *time.Time `json:"closedAt,omitempty"`
+	Comments []Comment  `json:"comments"`
+}
+
+type IssueListResult struct {
+	Items   []Issue `json:"items"`
+	Page    int     `json:"page"`
+	PerPage int     `json:"perPage"`
+	HasNext bool    `json:"hasNext"`
 }
 
 type Lister interface {
-	List(ctx context.Context, owner, name string, opts ListOptions) ([]Issue, error)
+	List(ctx context.Context, owner, name string, opts ListOptions) (*IssueListResult, error)
+}
+
+type Detailer interface {
+	Detail(ctx context.Context, owner, name string, number int) (*IssueDetail, error)
 }
