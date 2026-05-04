@@ -494,6 +494,14 @@ a.nav-item {
   color: var(--text-subtle);
 }
 
+.tree-view {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+}
+
 .tree {
   font-size: 13px;
   padding: 10px 12px;
@@ -748,20 +756,29 @@ a.nav-item {
 }
 
 .file-viewer__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 26px;
   height: 26px;
   border: 0;
   background: transparent;
   border-radius: var(--radius-sm);
   color: var(--text-subtle);
-  font-size: 22px;
-  line-height: 1;
   cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .file-viewer__close:hover {
   background: var(--surface);
   color: var(--text-primary);
+}
+
+.file-viewer__close svg {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .file-viewer__body {

@@ -2,20 +2,25 @@ import { useEffect, useState } from "react";
 import { fetchTree } from "../api/tree";
 import type { TreeEntry } from "../api/types";
 import { fileIconSlug } from "../utils/fileIcon";
-import { Modal } from "./Modal";
-import { FileViewer } from "./FileViewer";
 
 type Props = {
   owner: string;
   name: string;
-  branch: string;
+  onOpenFile: (path: string) => void;
+  expandedPaths: Set<string>;
+  onToggle: (path: string) => void;
 };
 
-export function TreeView({ owner, name, branch }: Props) {
+export function TreeView({
+  owner,
+  name,
+  onOpenFile,
+  expandedPaths,
+  onToggle,
+}: Props) {
   const [rootEntries, setRootEntries] = useState<TreeEntry[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [openPath, setOpenPath] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -33,7 +38,7 @@ export function TreeView({ owner, name, branch }: Props) {
   }
 
   return (
-    <>
+    <div className="tree-view">
       <div className="tree">
         {rootEntries.map(entry => (
           <TreeNode
@@ -41,22 +46,13 @@ export function TreeView({ owner, name, branch }: Props) {
             entry={entry}
             owner={owner}
             name={name}
-            onOpenFile={setOpenPath}
+            onOpenFile={onOpenFile}
+            expandedPaths={expandedPaths}
+            onToggle={onToggle}
           />
         ))}
       </div>
-      <Modal open={openPath !== null} onClose={() => setOpenPath(null)}>
-        {openPath !== null && (
-          <FileViewer
-            owner={owner}
-            name={name}
-            branch={branch}
-            path={openPath}
-            onClose={() => setOpenPath(null)}
-          />
-        )}
-      </Modal>
-    </>
+    </div>
   );
 }
 
@@ -65,19 +61,28 @@ type TreeNodeProps = {
   owner: string;
   name: string;
   onOpenFile: (path: string) => void;
+  expandedPaths: Set<string>;
+  onToggle: (path: string) => void;
 };
 
-function TreeNode({ entry, owner, name, onOpenFile }: TreeNodeProps) {
-  const [open, setOpen] = useState(false);
+function TreeNode({
+  entry,
+  owner,
+  name,
+  onOpenFile,
+  expandedPaths,
+  onToggle,
+}: TreeNodeProps) {
   const [children, setChildren] = useState<TreeEntry[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isDir = entry.type === "dir";
+  const isOpen = expandedPaths.has(entry.path);
 
   function onClick() {
     if (isDir) {
-      if (!children && !loading) {
+      if (!children && !loading && !isOpen) {
         setLoading(true);
         setError(null);
         fetchTree(owner, name, entry.path)
@@ -85,7 +90,7 @@ function TreeNode({ entry, owner, name, onOpenFile }: TreeNodeProps) {
           .catch(err => setError(err.message))
           .finally(() => setLoading(false));
       }
-      setOpen(o => !o);
+      onToggle(entry.path);
     } else {
       onOpenFile(entry.path);
     }
@@ -97,9 +102,9 @@ function TreeNode({ entry, owner, name, onOpenFile }: TreeNodeProps) {
         className={"tree-row" + (isDir ? " tree-row--dir" : " tree-row--file")}
         onClick={onClick}
         role="button"
-        aria-expanded={isDir ? open : undefined}
+        aria-expanded={isDir ? isOpen : undefined}
       >
-        <span className={"tree-row__chevron" + (open ? " tree-row__chevron--open" : "")}>
+        <span className={"tree-row__chevron" + (isOpen ? " tree-row__chevron--open" : "")}>
           {isDir ? <ChevronIcon /> : null}
         </span>
         <span className="tree-row__icon">
@@ -110,7 +115,7 @@ function TreeNode({ entry, owner, name, onOpenFile }: TreeNodeProps) {
           <span className="tree-row__size">{formatBytes(entry.size)}</span>
         )}
       </div>
-      {open && (
+      {isOpen && (
         <div className="tree-children">
           {loading && <div className="tree-row tree-row--muted">Loading...</div>}
           {error && <div className="tree-row tree-row--muted">{error}</div>}
@@ -121,6 +126,8 @@ function TreeNode({ entry, owner, name, onOpenFile }: TreeNodeProps) {
               owner={owner}
               name={name}
               onOpenFile={onOpenFile}
+              expandedPaths={expandedPaths}
+              onToggle={onToggle}
             />
           ))}
         </div>

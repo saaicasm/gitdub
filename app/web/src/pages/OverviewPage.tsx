@@ -6,9 +6,14 @@ import { useRepoContext } from "./RepoPage";
 import { Modal } from "../components/Modal";
 import { StackView } from "../components/StackView";
 import { TreeView } from "../components/TreeView";
+import { FileViewer } from "../components/FileViewer";
 import { colorFor } from "../utils/languageColors";
 import { iconSlugFor } from "../utils/languageIcon";
 import { formatNumber, formatTimeAgo } from "../utils/timeago";
+
+type TreeState = {
+  expandedPaths: Set<string>;
+};
 
 export default function OverviewPage() {
   const { repo } = useRepoContext();
@@ -16,6 +21,9 @@ export default function OverviewPage() {
   const [treeModalOpen, setTreeModalOpen] = useState(false);
   const [treePreview, setTreePreview] = useState<TreeEntry[] | null>(null);
   const [stackPreview, setStackPreview] = useState<Stack | null>(null);
+  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
+  const [openFilePath, setOpenFilePath] = useState<string | null>(null);
+  const [treeHistory, setTreeHistory] = useState<TreeState[]>([]);
 
   useEffect(() => {
     fetchTree(repo.owner, repo.name, "")
@@ -34,6 +42,29 @@ export default function OverviewPage() {
       .then(setStackPreview)
       .catch(() => setStackPreview(null));
   }, [repo.owner, repo.name]);
+
+  function handleOpenFile(filePath: string) {
+    setTreeHistory(prev => [...prev, { expandedPaths: new Set(expandedPaths) }]);
+    setOpenFilePath(filePath);
+  }
+
+  function handleToggleFolder(path: string) {
+    setExpandedPaths(prev => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }
+
+  function handleBackInTree() {
+    if (treeHistory.length > 0) {
+      const prevState = treeHistory[treeHistory.length - 1];
+      setExpandedPaths(new Set(prevState.expandedPaths));
+      setOpenFilePath(null);
+      setTreeHistory(prev => prev.slice(0, -1));
+    }
+  }
 
   return (
     <div className="overview-page">
@@ -86,7 +117,23 @@ export default function OverviewPage() {
       </Modal>
 
       <Modal open={treeModalOpen} onClose={() => setTreeModalOpen(false)}>
-        <TreeView owner={repo.owner} name={repo.name} branch={repo.defaultBranch} />
+        {openFilePath === null ? (
+          <TreeView
+            owner={repo.owner}
+            name={repo.name}
+            onOpenFile={handleOpenFile}
+            expandedPaths={expandedPaths}
+            onToggle={handleToggleFolder}
+          />
+        ) : (
+          <FileViewer
+            owner={repo.owner}
+            name={repo.name}
+            branch={repo.defaultBranch}
+            path={openFilePath}
+            onClose={handleBackInTree}
+          />
+        )}
       </Modal>
     </div>
   );

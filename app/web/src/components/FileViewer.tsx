@@ -46,9 +46,9 @@ export function FileViewer({ owner, name, branch, path, onClose }: Props) {
             type="button"
             className="file-viewer__close"
             onClick={onClose}
-            aria-label="Close"
+            aria-label="Back to tree"
           >
-            ×
+            <BackArrowIcon />
           </button>
         </div>
       </header>
@@ -118,4 +118,12 @@ function formatSize(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function BackArrowIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M12 5L7 10l5 5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
